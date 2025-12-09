@@ -23,8 +23,10 @@ mkdir -p /etc/sysconfig/network/providers
 # Activate migration services
 #--------------------------------------
 for service in \
+    NetworkManager.service \
     suse-migration-container.service \
     suse-migration-container-prepare.service \
+    suse-migration-container-setup-host-network.service \
     suse-migration-container-product-setup.service \
     suse-migration-container-reboot.service \
     suse-migration-container-grub-setup.service \
@@ -33,6 +35,7 @@ for service in \
     suse-migration-container-btrfs-snapshot-post-migration.service \
     suse-migration-container-regenerate-initrd.service \
     suse-migration-container-wicked-networkmanager.service \
+    suse-migration-container-pam-config.service \
     suse-migration-container-ha.service
 do
     systemctl enable "${service}"

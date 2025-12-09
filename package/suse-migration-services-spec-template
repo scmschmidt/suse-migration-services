@@ -74,6 +74,16 @@ Provides:	  python3-migration = %{version}-%{release}
 %description -n  %{pythonpkgname}
 Python based implementation for suse major code stream upgrade system
 
+%package          -n suse-migration-scripts
+Summary:          The common scripts collection for migrations
+Group:            System/Management
+Requires:         bash
+Requires:         grep
+BuildArch:        noarch
+
+%description -n suse-migration-scripts
+Common script collection for migrations.
+
 %package          -n suse-migration-pre-checks
 Summary:          The pre-checks code used with the python migration module
 Group:            System/Management
@@ -83,7 +93,7 @@ Requires:         %{pythonpkgname} = %{version}-%{release}
 Requires:         %{pythons}-Cerberus
 Requires:         %{pythons}-PyYAML
 Requires:         %{pythons}-setuptools
-%if 0%{?suse_version} >= 1500
+%if 0%{?sle_version} >= 150700 || 0%{?suse_version} >= 1600
 Requires:         wicked2nm
 %endif
 Conflicts:        suse-migration-sle15-activation < 2.0.33
@@ -98,6 +108,7 @@ Group:            System/Management
 Requires:         podman
 Requires:         sysvinit-tools
 Requires:         sudo
+Requires:         suse-migration-scripts
 BuildArch:        noarch
 
 %description -n suse-migration
@@ -123,6 +134,9 @@ The migrate tool to start the migration as container based process
 
 install -D -m 755 tools/run_migration \
     %{buildroot}%{_sbindir}/run_migration
+
+install -D -m 755 tools/network_pre.functions \
+    %{buildroot}%{_datarootdir}/suse_migration_services/network_pre.functions
 
 install -D -m 644 systemd/suse-migration-mount-system.service \
     %{buildroot}%{_unitdir}/suse-migration-mount-system.service
@@ -175,6 +189,9 @@ install -D -m 644 systemd/suse-migration-apparmor-selinux.service \
 install -D -m 644 systemd/suse-migration-wicked-networkmanager.service \
     %{buildroot}%{_unitdir}/suse-migration-wicked-networkmanager.service
 
+install -D -m 644 systemd/suse-migration-pam-config.service \
+    %{buildroot}%{_unitdir}/suse-migration-pam-config.service
+
 install -D -m 644 systemd/suse-migration-ha.service \
     %{buildroot}%{_unitdir}/suse-migration-ha.service
 
@@ -183,6 +200,14 @@ install -D -m 644 systemd/suse-migration-btrfs-snapshot-pre-migration.service \
 
 install -D -m 644 systemd/suse-migration-container.service \
     %{buildroot}%{_unitdir}/suse-migration-container.service
+
+%if 0%{?suse_version} >= 1600
+install -D -m 644 systemd/suse-migration-container-setup-host-network.service \
+    %{buildroot}%{_unitdir}/suse-migration-container-setup-host-network.service
+%endif
+
+install -D -m 644 systemd/suse-migration-container-pam-config.service \
+    %{buildroot}%{_unitdir}/suse-migration-container-pam-config.service
 
 install -D -m 644 systemd/suse-migration-container-prepare.service \
     %{buildroot}%{_unitdir}/suse-migration-container-prepare.service
@@ -239,6 +264,9 @@ install -D -m 755 tools/migrate \
 %{_bindir}/suse-migration-mount-system
 %{_bindir}/suse-migration-post-mount-system
 %{_bindir}/suse-migration-setup-host-network
+%if 0%{?suse_version} >= 1600
+%{_bindir}/suse-migration-setup-container-network
+%endif
 %{_bindir}/suse-migration-setup-name-resolver
 %{_bindir}/suse-migration-prepare
 %{_bindir}/suse-migration
@@ -249,6 +277,7 @@ install -D -m 755 tools/migrate \
 %{_bindir}/suse-migration-kernel-load
 %{_bindir}/suse-migration-reboot
 %{_bindir}/suse-migration-wicked-networkmanager
+%{_bindir}/suse-migration-pam-config
 %{_bindir}/suse-migration-ha
 %{_unitdir}/suse-migration-ssh-keys.service
 %{_unitdir}/suse-migration-btrfs-snapshot-pre-migration.service
@@ -259,6 +288,9 @@ install -D -m 755 tools/migrate \
 %{_unitdir}/suse-migration-prepare.service
 %{_unitdir}/suse-migration.service
 %{_unitdir}/suse-migration-container.service
+%if 0%{?suse_version} >= 1600
+%{_unitdir}/suse-migration-container-setup-host-network.service
+%endif
 %{_unitdir}/suse-migration-container-prepare.service
 %{_unitdir}/suse-migration-container-product-setup.service
 %{_unitdir}/suse-migration-container-reboot.service
@@ -270,6 +302,7 @@ install -D -m 755 tools/migrate \
 %{_unitdir}/suse-migration-container-ha.service
 %{_unitdir}/suse-migration-container-regenerate-initrd.service
 %{_unitdir}/suse-migration-container-wicked-networkmanager.service
+%{_unitdir}/suse-migration-container-pam-config.service
 %{_unitdir}/suse-migration-console-log.service
 %{_unitdir}/suse-migration-apparmor-selinux.service
 %{_unitdir}/suse-migration-grub-setup.service
@@ -280,11 +313,16 @@ install -D -m 755 tools/migrate \
 %{_unitdir}/suse-migration-kernel-load.service
 %{_unitdir}/suse-migration-reboot.service
 %{_unitdir}/suse-migration-wicked-networkmanager.service
+%{_unitdir}/suse-migration-pam-config.service
 %{_unitdir}/suse-migration-ha.service
 
 %files -n %{pythonpkgname}
 %{python_sitelib}/suse_migration_services
 %{python_sitelib}/suse_migration_services-%{version}*-info
+
+%files -n suse-migration-scripts
+%dir %{_datarootdir}/suse_migration_services
+%{_datarootdir}/suse_migration_services
 
 %files -n suse-migration-pre-checks
 %{_bindir}/suse-migration-pre-checks

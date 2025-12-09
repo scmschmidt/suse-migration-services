@@ -16,49 +16,44 @@
 # along with suse-migration-services. If not, see <http://www.gnu.org/licenses/>
 #
 import logging
+import glob
 import os
+import re
 
-from suse_migration_services.command import Command
 from suse_migration_services.defaults import Defaults
 from suse_migration_services.logger import Logger
-from suse_migration_services.exceptions import DistMigrationException
 
 
-class HighAvailabilityExtension:
+class PamConfig:
     def __init__(self):
         """
-        Migration for high availability extension
+        DistMigration update PAM configuration
+
+        pam_unix_*.so have been migrated to pam_unix.so. We need to update
+        all configuration under /etc/pam.d to make them refers to the new
+        shared object.
         """
         Logger.setup()
         self.log = logging.getLogger(Defaults.get_migration_log_name())
-        self.root_path = Defaults.get_system_root_path()
 
     def perform(self):
-        self.log.info('Running migration for high availability extension')
-        self.log.info('chroot to %s', self.root_path)
-
-        os.chroot(self.root_path)
-
-        if not self._corosync_conf_exists():
+        self.log.info("Scanning /etc/pam.d")
+        pam_unix_regexp = re.compile(
+            r"pam_unix_(auth|acct|session|passwd)\.so"
+        )
+        system_root = Defaults.get_system_root_path()
+        config_dir_path = os.path.join(system_root, 'etc/pam.d/*')
+        for config_file in glob.glob(config_dir_path):
             self.log.info(
-                'corosync.conf not found. Skipped HA extension migration.'
+                'Migration PAM configuration file {0}'.format(config_file)
             )
-            return
-        try:
-            Command.run(
-                [
-                    'crm', 'cluster', 'health', 'sles16', '--local', '--fix',
-                ]
-            )
-        except Exception as issue:
-            message = 'Migration for high availability failed with: {}'
-            self.log.error(message.format(issue))
-            raise DistMigrationException(message.format(issue))
-
-    def _corosync_conf_exists(self):
-        return os.access('/etc/corosync/corosync.conf', os.F_OK)
+            with open(config_file, 'r') as f:
+                content = f.read()
+            content = pam_unix_regexp.sub('pam_unix.so', content)
+            with open(config_file, 'w') as f:
+                f.write(content)
 
 
 def main():
-    ha_setup = HighAvailabilityExtension()
-    ha_setup.perform()
+    pam_setup = PamConfig()
+    pam_setup.perform()

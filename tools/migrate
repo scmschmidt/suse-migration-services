@@ -18,6 +18,8 @@
 #
 set -e
 
+source /usr/share/suse_migration_services/network_pre.functions
+
 # default migration system
 MIGRATION_SYSTEM=registry.opensuse.org/home/marcus.schaefer/dms/containers_sle15/migration:latest
 
@@ -51,6 +53,14 @@ usage() {
     echo "      Reboot after successful upgrade"
     echo "  --debug"
     echo "      Run attached to the migration container"
+}
+
+function migration_target {
+    if [[ "${MIGRATION_SYSTEM}" == *containers_sle16* ]]; then
+        echo code16
+    else
+        echo generic
+    fi
 }
 
 migrate() {
@@ -162,7 +172,13 @@ if [ "${argZypperDup}" ];then
     echo "use_zypper_migration: false" >> /etc/sle-migration-service.yml
 fi
 
+if [ "$(migration_target)" = "code16" ]; then
+    setup_wicked_to_NetworkManager_prereqs
+fi
+
 migrate
+
+dracut -f
 
 if [ "${argReboot}" ];then
     sudo reboot -f
