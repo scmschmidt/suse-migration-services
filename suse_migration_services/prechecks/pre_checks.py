@@ -140,7 +140,7 @@ def main():
     log.info('--> Checking sshd configuration...')
     check_sshd.root_login(migration_system=migration_system_mode)
     log.info('Done')
-    
+
     log.info('--> Checking saptune migration...')
     check_saptune.check_saptune(migration_system=migration_system_mode)
     log.info('Done')
